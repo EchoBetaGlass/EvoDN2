@@ -26,7 +26,7 @@ maxrank = parameters.maxrank;
 P_omit_match = P_omit_min;
 F_bad = 1e6;%fitness assigned to Preys performing badly
 
-Prey = create_Population(Prey_popsize, NNet_str);
+[Prey FVal] = create_Population(Prey_popsize, NNet_str);
 
 %Placement of Prey
 for i = 1:length(Prey)
@@ -85,7 +85,7 @@ for num_Gen = 1:no_generations
             parent2 = ceil(rand*length(matex));
             parent2 = lattice(xpos-2+matex(parent2),ypos-2+matey(parent2));
             % Write the following function
-            Offsprng = create_Offsprng(?);
+            [Offsprng FVal_offsp] = create_Offsprng(?); % Write this function
             %Random placement of offsprings /10 trials
             for l = 1:2
                 for j=1:10 %10 trial for free spot
@@ -93,6 +93,7 @@ for num_Gen = 1:no_generations
                     ypos = round(rand(1,1)*(no_y-1)+1)+1;
                     if lattice(xpos,ypos)==0
                         Prey = [Prey Offsprng(l)];
+                        FVal = [FVal ; FVal_offsp(l,:)];
                         lattice(xpos,ypos) = length(Prey{1}(:,1,1));
                         break
                     end
@@ -100,4 +101,119 @@ for num_Gen = 1:no_generations
             end
         end
         MovePrey(0, 0, 0);
-    end 
+    end
+
+    [fonrank front] = NONDOM_SORT([FVal]);  % Check this function
+
+    % Removing all except rank n
+    if generation/KillInterval == round(generation/KillInterval)
+        if generation < no_generations
+            % Generate new prey to balance the population
+            [Prey_new FVal_new] = create_Population(newPrey_popsize, NNet_str);
+        end
+        indfr = find(fonrank > maxrank);
+        FVal(indfr,:) = F_bad+eps;
+        [Prey FVal] = KillBadPrey(Prey, FVal);  % Write this function
+        [fonrank front] = NONDOM_SORT([FVal]);  % Write this function
+    end
+
+    crodit = CROW_SORT([FVal], front); %   Write this function
+    FVal(:,1) = (FVal(:,1) - min(FVal(:,1)))./(max(FVal(:,1)) - min(FVal(:,1)));
+    FVal(:,2) = (FVal(:,2) - min(FVal(:,2)))./(max(FVal(:,2)) - min(FVal(:,2)));
+
+    % Move of predators /killing
+    PredMoves = floor((length(Prey) - no_Prey_preferred)/Predator_popsize);
+    fprintf('\nGeneration %i: Predatorpop %i PredMoves %i\n',generation,length(Predators(:,1)),PredMoves);
+    fprintf('Preypop before: %i; Preypop after: ', length(Prey{1}))
+    for i = 1:Predator_popsize
+        for k = 1:PredMoves
+            [xpos, ypos] = find(lattice(2:no_x+1,2:no_y+1) == -i);
+            xpos = xpos+1; ypos = ypos+1;
+            [matex,matey] = find(lattice(xpos-1:xpos+1,ypos-1:ypos+1) > 0);
+            if length(matex) > 1 %prey available
+                rows=[];
+                for t = 1:length(matex)
+                    rows = [rows; lattice(matex(t)+xpos-2,matey(t)+ypos-2)];
+                end
+
+                % Calculating Fitness Value for all Prey near Predator i, with Elitism
+                f = (FVal(rows,:)*[Predators(i);1-Predators(i)]).*(front(rows)-1);
+
+                % Using Crowding in case all Prey have same fitness
+                if length(unique(front(rows))) == 1
+                    f = (f+1)./(1+crodit(rows));
+                end
+
+                % Killing Prey
+                [~,pos] = max(f);
+                j = rows(pos(1)); lattice(xpos,ypos) = 0; %removing predator i
+                [xpos,ypos] = find(lattice(2:no_x+1,2:no_y+1) == j);
+                xpos = xpos+1; ypos = ypos+1;
+                Prey = MovePredator(Prey, xpos, ypos, i, j);
+                FVal(j,:) = []; front(j) = []; crodit(j) = []; fonrank(j) = []; %CHECK!!!!! => checked, works => see MovePredator
+            else    %Only move
+                for j=1:10 %10 trial for free spot
+                    dx=round(rand*(3-eps)-1.5); %-1 to the left, 0 no move, 1 to the right
+                    dy=round(rand*(3-eps)-1.5); %-1 down, 0 no move, 1 up
+                    if lattice(xpos+dx,ypos+dy)==0
+                        lattice(xpos,ypos)=0; %removing predator i
+                        Prey = MovePredator(Prey, xpos+dx, ypos+dy, i, inf);
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    fprintf('%i\n' , length(Prey))
+    PlotLattice % Write this function
+    PlotPareto(FVal, fonrank)   % Write this function
+
+    %Random placement of New Prey /10 trials
+    for i = 1:length(Prey_new)
+        for k = 1:10 %10 trial for free spot
+            [emptyx,emptyy] = find(lattice(2:no_x+1,2:no_y+1) == 0);
+            if ~isempty(emptyx > 0)
+                j = ceil(rand*length(emptyx));
+                lattice(emptyx(j)+1,emptyy(j)+1) = length(Prey) + 1;
+                Prey = [Prey; Prey_new(i)];
+                FVal = [FVal; FVal_new];
+                break
+            end
+        end
+    end
+end
+
+% Choosing only Prey on the Pareto Front
+[fonrank, front] = NONDOM_SORT([FVal]);
+PlotPareto(FVal, fonrank); figure(4)
+Prey = Prey(front==1);
+FVal = FVal(front==1,:);
+
+% Removing Weakly dominated Prey
+f = [(1:length(FVal(:,1)))' FVal]; 
+f = sortrows(f, 3); f = sortrows(f, 2); 
+i = 2;
+while i ~= length(f(:,1))
+    if 
+        f(i,2) == f(i-1,2), f(i,:) = []; 
+        Prey(i) = [];
+    else 
+        i = i+1; 
+    end
+end
+
+FVal = f(:,2:3);
+
+% Selecting Prey based on Corrected Akaike Information criteria
+for i = 1:length(Prey)
+    IC = Prey(i).IC;
+end
+[~,i] = min(IC); hold on
+parameters.dataset(setno).pareto.select = i;
+plot(FVal(i,2), FVal(i,1), 'dr', 'LineWidth', 2)
+
+% Saving Output
+parameters.dataset(setno).pareto.P = Prey;
+parameters.dataset(setno).pareto.info = IC;
+parameters.dataset(setno).pareto.FVal = FVal;

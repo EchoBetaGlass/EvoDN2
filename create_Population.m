@@ -1,4 +1,4 @@
-function Population = create_Population(Pop_size, Pop_str)
+function [Population FVal] = create_Population(Pop_size, Pop_str)
 %create_Poulation - Creates cell array of Population of subnet NNs
 %
 % Syntax: Population = create_Poulation(Pop_size, Pop_str)
@@ -33,5 +33,8 @@ function Population = create_Population(Pop_size, Pop_str)
                 Population(Pop_index).subnet{s_index}{layer} = net;
             end
         end
+        [FValue, IC] = DNevalnet(Population(Pop_index));
+        FVal = [FVal FValue];
+        Population(Pop_index).IC = IC;
     end
 end
