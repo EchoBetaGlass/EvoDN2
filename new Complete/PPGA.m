@@ -26,7 +26,7 @@ maxrank = parameters.maxrank;
 P_omit_match = P_omit_min;
 F_bad = 1e6;%fitness assigned to Preys performing badly
 
-[Prey FVal] = create_Population(Prey_popsize, NNet_str);
+[Prey, FVal] = create_Population(Prey_popsize, NNet_str);
 
 %Placement of Prey
 for i = 1:length(Prey)
@@ -59,14 +59,14 @@ for num_Gen = 1:no_generations
     for Pop_index = 1 : Pop_size
         if rand < P_move_prey
             %Identify location
-            [xpos,ypos] = find(lattice(2:no_x+1,2:no_y+1) == i);
+            [xpos,ypos] = find(lattice(2:no_x+1,2:no_y+1) == Pop_index);
             xpos = xpos+1; ypos = ypos+1;
             for j = 1:10 %10 trial for free spot
                 dx = round(rand*(3-eps)-1.5); %-1 to the left, 0 no move, 1 to the right
                 dy = round(rand*(3-eps)-1.5); %-1 down, 0 no move, 1 up
                 if lattice(xpos+dx,ypos+dy) == 0
                     lattice(xpos,ypos) = 0; %removing prey i
-                    MovePrey(xpos+dx, ypos+dy, i); 
+                    MovePrey(xpos+dx, ypos+dy, Pop_index); 
                     break
                 end
             end
@@ -75,7 +75,7 @@ for num_Gen = 1:no_generations
 
     % Breeding of all population members
     for Pop_index = 1 : Pop_size
-        [xpos,ypos] = find(lattice(2:no_x+1,2:no_y+1) == i);
+        [xpos,ypos] = find(lattice(2:no_x+1,2:no_y+1) == Pop_index);
         xpos = xpos+1; ypos = ypos+1;
         moore = lattice(xpos-1:xpos+1,ypos-1:ypos+1);
         %Remove the i-prey
@@ -85,7 +85,9 @@ for num_Gen = 1:no_generations
             parent2 = ceil(rand*length(matex));
             parent2 = lattice(xpos-2+matex(parent2),ypos-2+matey(parent2));
             % Write the following function
-            [Offsprng FVal_offsp] = create_Offsprng(?); % Write this function
+            [Offsprng, FVal_offsp] = create_Offsprng(Pop_index, parent2, ...
+                                                     Prey, num_Gen, ...
+                                                     no_generations); 
             %Random placement of offsprings /10 trials
             for l = 1:2
                 for j=1:10 %10 trial for free spot
@@ -103,13 +105,13 @@ for num_Gen = 1:no_generations
         MovePrey(0, 0, 0);
     end
 
-    [fonrank front] = NONDOM_SORT([FVal]);  % Check this function
+    [fonrank, front] = NONDOM_SORT([FVal]);  % Check this function
 
     % Removing all except rank n
     if generation/KillInterval == round(generation/KillInterval)
         if generation < no_generations
             % Generate new prey to balance the population
-            [Prey_new FVal_new] = create_Population(newPrey_popsize, NNet_str);
+            [Prey_new, FVal_new] = create_Population(newPrey_popsize, NNet_str);
         end
         indfr = find(fonrank > maxrank);
         FVal(indfr,:) = F_bad+eps;
