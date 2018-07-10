@@ -9,9 +9,10 @@ function [Population, FVal] = create_Population(Pop_size, Pop_str)
 % Pop_str{i}{2} is a vector describing the number of nodes in each layer
 
 % Population is an struct array of size Pop_size
-% Struct Population contains: Cell array subnet (DNN connections and bias values)
-%                             double IC (complexity of the DNN)
-%                             double FValue (RMSE of the DNN on training data)
+% Struct Population contains: Cell array- subnet (DNN connections and bias values)
+%                             2D matrix- endnet (Final layer that aggregates all subnets)
+%                             double- complexity (complexity of the DNN)
+%                             double- err (RMSE of the DNN on training data)
 %
 % Cell arrray subnet has size n (see up). Each element is itself a cell array.
 % Population(i).subnet{j}{k} gives the 2D matrix of connections in the k-th layer
@@ -22,6 +23,7 @@ function [Population, FVal] = create_Population(Pop_size, Pop_str)
     wlow = -5;  %min value for a connection
 
     Population{Pop_size} = {};
+    FVal = []; %contains Error and complexity
     Num_subnets = length(Pop_str);
     for Pop_index = 1:Pop_size
         Population(Pop_index).structure = Pop_str;
@@ -42,9 +44,10 @@ function [Population, FVal] = create_Population(Pop_size, Pop_str)
                 Population(Pop_index).subnet{s_index}{layer} = net;
             end
         end
-        [FValue, IC] = DNevalnet(Population(Pop_index));
-        FVal = [FVal FValue];
-        Population(Pop_index).FValue = FValue;
-        Population(Pop_index).IC = IC;
+        [err, complexity, endnet] = DNevalnet(Population(Pop_index),Pop_str);
+        FVal = [FVal; [err, complexity]];
+        Population(Pop_index).err = err;
+        Population(Pop_index).complexity = complexity;
+        Population(Pop_index).endnet = endnet;
     end
 end

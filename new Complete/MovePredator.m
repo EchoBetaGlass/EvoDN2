@@ -9,9 +9,7 @@ global lattice no_x no_y
 %j      prey to kill
 if j < inf
     %removing prey j from population
-    for layer = 1:length(Prey)
-        Prey{layer}(j,:,:) = [];
-    end
+    Prey(j) = [];
     [renamex,renamey] = find(lattice > j);
     for t = 1:length(renamex)
         lattice(renamex(t),renamey(t)) = lattice(renamex(t),renamey(t))-1;

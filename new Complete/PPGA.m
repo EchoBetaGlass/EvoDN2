@@ -1,7 +1,6 @@
 function PPGA(parameters)
-
+global no_x no_y lattice
 %%Descrition: Use PPGA to create DNN models
-
 %NNGA definitions
 NNet_str = parameters.NNet_str; %Cell defining the input varables and 
 								%structure of various subnets
@@ -26,7 +25,7 @@ maxrank = parameters.maxrank;
 P_omit_match = P_omit_min;
 F_bad = 1e6;%fitness assigned to Preys performing badly
 
-[Prey, FVal] = create_Population(Prey_popsize, NNet_str);
+[Prey, FVal] = create_Population(Prey_popsize, Pop_str);
 
 %Placement of Prey
 for i = 1:length(Prey)
@@ -86,7 +85,7 @@ for num_Gen = 1:no_generations
             parent2 = lattice(xpos-2+matex(parent2),ypos-2+matey(parent2));
             % Write the following function
             [Offsprng, FVal_offsp] = create_Offsprng(Pop_index, parent2, ...
-                                                     Prey, num_Gen, ...
+                                                     Prey, Pop_str, num_Gen, ...
                                                      no_generations); 
             %Random placement of offsprings /10 trials
             for l = 1:2

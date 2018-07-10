@@ -1,10 +1,11 @@
-function PlotPareto(F1, F2, rank)
+function PlotPareto(F1F2, rank)
 
 global generation parameters setno figure_handle F_bad
 %-------------------------------------------------
 % Plot Paretorank
 %-------------------------------------------------
 ran = 1e-2;
+F1 = F1F2(:,1); F2 = F1F2(:,2);
 if parameters.ploton == 0 && generation == parameters.generations
     figure(4)
     F = [F2(rank == 0) F1(rank == 0)];
