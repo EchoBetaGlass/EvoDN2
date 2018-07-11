@@ -1,4 +1,4 @@
-function [Prey F1 F2] = KillBadPrey(Prey, F1F2)
+function [Prey F1F2] = KillBadPrey(Prey, F1F2)
 %-------------------------------------------------
 % Kill bad Prey 
 %-------------------------------------------------
@@ -27,7 +27,7 @@ for i = 1:length(PreyIndex)
     [xpos,ypos] = find(lattice(2:no_x+1,2:no_y+1) == PreyIndex(i));
     lattice(xpos+1,ypos+1) = i;
 end
-
+F1F2 = [F1 F2];
 MovePrey(0, 0, 0);
 
 end

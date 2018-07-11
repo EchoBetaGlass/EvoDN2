@@ -4,7 +4,9 @@ function [errorVal,F2,Beta,InfoC] = DNevalnet(net, Pop_str)
 % Syntax: [fval,W,InfoC] = DNevalnet(net)
 %
 % Long description
-    global setno parameters
+    global parameters
+    %global setno
+    setno = 1;
 	out = parameters.dataset(setno).out;
 	outmax = max(out);
 	outmin = min(out);
@@ -15,20 +17,20 @@ function [errorVal,F2,Beta,InfoC] = DNevalnet(net, Pop_str)
         in = parameters.dataset(setno).in;
         in = in(:,Pop_str{subnet}{1});
         no_layer = length(Pop_str{subnet}{2});
-        complexity(subnet) = ones(1,size(in,2));
+        complexity{subnet} = ones(1,size(in,2));
         %k = 0;
         net = net.subnet{subnet};
         cnet = net; %for complexity calculations
-        for layer = 1:no_layer  %-1?
+        for layer = 1:no_layer - 1  %-1?
             %cnet{layer} = logical(cnet{layer});
             in = in*net{layer}(2:end,:);
             bias = net{layer}(1,:);
             in = in+bias;
             in = 1./(1+exp(-in));
-            complexity(subnet) = complexity(subnet)*abs(cnet{layer}(2:end,:));
+            complexity{subnet} = complexity{subnet}*abs(cnet{layer}(2:end,:));
             %k = k+ length(find(net{layer}));
         end
-        complexity(subnet) = sum(complexity(subnet));
+        complexity{subnet} = sum(complexity{subnet});
         in_end = [in_end in];
     end
 	%% LLSQ to solve in*Beta = out
@@ -36,7 +38,7 @@ function [errorVal,F2,Beta,InfoC] = DNevalnet(net, Pop_str)
 	modelout = in_end*Beta;
 
 	errorVal = sqrt(sum(((modelout-out)/(outmax-outmin)).^2)/no_points);
-	F2 = sum(complexity);
+	F2 = sum(cell2mat(complexity));
 
 	% n = no_points;
 	% k = k+length(find(Beta));

@@ -22,11 +22,11 @@ function [Population, FVal] = create_Population(Pop_size, Pop_str)
     whigh = 5;  %Max value for a connection
     wlow = -5;  %min value for a connection
 
-    Population{Pop_size} = {};
+    Population = [];
     FVal = []; %contains Error and complexity
     Num_subnets = length(Pop_str);
     for Pop_index = 1:Pop_size
-        Population(Pop_index).structure = Pop_str;
+        %Population(Pop_index).structure = Pop_str;
         for s_index = 1:Num_subnets
             for layer = 1:length(Pop_str{s_index}{2})-1
                 in = Pop_str{s_index}{2}(layer);    % number of input nodes
@@ -44,7 +44,7 @@ function [Population, FVal] = create_Population(Pop_size, Pop_str)
                 Population(Pop_index).subnet{s_index}{layer} = net;
             end
         end
-        [err, complexity, endnet] = DNevalnet(Population(Pop_index),Pop_str);
+        [err, complexity, endnet] = DNevalnet(Population(Pop_index), Pop_str);
         FVal = [FVal; [err, complexity]];
         Population(Pop_index).err = err;
         Population(Pop_index).complexity = complexity;

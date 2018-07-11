@@ -1,4 +1,4 @@
-function output = create_offspring(i,parent2,Prey,Pop_str,generation,no_generations)
+function [Offsprng, F_val] = create_offspring(i,parent2,Prey,Pop_str,generation,no_generations)
 %myFun - Description
 %
 % Syntax: children = create_offspring(Prey, i,parent2,P_node_xover,P_mutation,Mut_alfa)
@@ -40,24 +40,24 @@ for subnet = 1:length(Offsprng(1).subnet)
 			mutate = randperm(connections,mutate);
 			sub1{layer}(mutate) = sub1{layer}(mutate) + Mut_alfa * ...
                                     (1-generation/no_generations) * ...
-                                    (sub3(mutate) - sub4(mutate));
+                                    (sub3{layer}(mutate) - sub4{layer}(mutate));
 			mutate = binornd(connections,P_mutation);
 			mutate = randperm(connections,mutate);
             sub2{layer}(mutate) = sub2{layer}(mutate) + Mut_alfa * ...
                                     (1-generation/no_generations) * ...
                                     (sub3{layer}(mutate) - sub4{layer}(mutate));
 		end
-    end
-    [err, complexity, endnet] = DNevalnet(sub1,Pop_str);
-    Offsprng(1).subnet{subnet} = sub1;
-    Offsprng(1).endnet = endnet;
+	end
+	Offsprng(1).subnet{subnet} = sub1;
+	[err, complexity, endnet] = DNevalnet(Offsprng(1),Pop_str);
     Offsprng(1).err = err;
     Offsprng(1).complexity = complexity;
+    Offsprng(1).endnet = endnet;
     F_val = [err, complexity];
-    [err, complexity, endnet] = DNevalnet(sub2,Pop_str);
-    Offsprng(2).subnet{subnet} = sub2;
-    Offsprng(2).endnet = endnet;
+	Offsprng(2).subnet{subnet} = sub2;
+    [err, complexity, endnet] = DNevalnet(Offsprng(2),Pop_str);
     Offsprng(2).err = err;
     Offsprng(2).complexity = complexity;
+    Offsprng(2).endnet = endnet;
     F_val = [F_val; [err, complexity]];
 end

@@ -1,8 +1,9 @@
-function PPGA(parameters)
-global no_x no_y lattice
+function PPGA()
+global no_x no_y lattice F_bad
+global parameters
 %%Descrition: Use PPGA to create DNN models
 %NNGA definitions
-NNet_str = parameters.NNet_str; %Cell defining the input varables and 
+Pop_str = parameters.Pop_str; %Cell defining the input varables and 
 								%structure of various subnets
 P_omit_max = 0.99;  %After ranking max value for random generated P_omit
 P_omit_min = 0.3;   %-''- min value 
@@ -11,7 +12,7 @@ P_omit_min = 0.3;   %-''- min value
 Prey_popsize = parameters.Prey_popsize;                %Initial popsize
 no_Prey_preferred = parameters.no_Prey_preferred;      %Desired popsize
 Predator_popsize = parameters.Predator_popsize;
-no_new_Prey = parameters.no_new_Prey;
+newPrey_popsize = parameters.no_new_Prey;
 no_generations = parameters.generations;
 P_move_Prey = 0.3;
 
@@ -25,6 +26,7 @@ maxrank = parameters.maxrank;
 P_omit_match = P_omit_min;
 F_bad = 1e6;%fitness assigned to Preys performing badly
 
+lattice = zeros(no_x+2,no_y+2);
 [Prey, FVal] = create_Population(Prey_popsize, Pop_str);
 
 %Placement of Prey
@@ -51,12 +53,12 @@ MovePrey(0, 0, 0);
 
 for num_Gen = 1:no_generations
     Pop_size = length(Prey);
-
+    Prey_new = [];
     % Calculate Standard deviation in population as mutval here%
 
     % Movement of all population members
     for Pop_index = 1 : Pop_size
-        if rand < P_move_prey
+        if rand < P_move_Prey
             %Identify location
             [xpos,ypos] = find(lattice(2:no_x+1,2:no_y+1) == Pop_index);
             xpos = xpos+1; ypos = ypos+1;
@@ -79,12 +81,12 @@ for num_Gen = 1:no_generations
         moore = lattice(xpos-1:xpos+1,ypos-1:ypos+1);
         %Remove the i-prey
         moore(2,2) = 0;
-        [matex,matey] = find(moore >= 1 & moore <= len);
+        [matex,matey] = find(moore >= 1 & moore <= Pop_size);
         if ~isempty(matex)
             parent2 = ceil(rand*length(matex));
             parent2 = lattice(xpos-2+matex(parent2),ypos-2+matey(parent2));
             % Write the following function
-            [Offsprng, FVal_offsp] = create_Offsprng(Pop_index, parent2, ...
+            [Offsprng, FVal_offsp] = create_offspring(Pop_index, parent2, ...
                                                      Prey, Pop_str, num_Gen, ...
                                                      no_generations); 
             %Random placement of offsprings /10 trials
@@ -95,7 +97,7 @@ for num_Gen = 1:no_generations
                     if lattice(xpos,ypos)==0
                         Prey = [Prey Offsprng(l)];
                         FVal = [FVal ; FVal_offsp(l,:)];
-                        lattice(xpos,ypos) = length(Prey{1}(:,1,1));
+                        lattice(xpos,ypos) = length(Prey);
                         break
                     end
                 end
@@ -107,10 +109,10 @@ for num_Gen = 1:no_generations
     [fonrank, front] = NONDOM_SORT([FVal]);  % Check this function
 
     % Removing all except rank n
-    if generation/KillInterval == round(generation/KillInterval)
-        if generation < no_generations
+    if num_Gen/KillInterval == round(num_Gen/KillInterval)
+        if num_Gen < no_generations
             % Generate new prey to balance the population
-            [Prey_new, FVal_new] = create_Population(newPrey_popsize, NNet_str);
+            [Prey_new, FVal_new] = create_Population(newPrey_popsize, Pop_str);
         end
         indfr = find(fonrank > maxrank);
         FVal(indfr,:) = F_bad+eps;
@@ -124,8 +126,8 @@ for num_Gen = 1:no_generations
 
     % Move of predators /killing
     PredMoves = floor((length(Prey) - no_Prey_preferred)/Predator_popsize);
-    fprintf('\nGeneration %i: Predatorpop %i PredMoves %i\n',generation,length(Predators(:,1)),PredMoves);
-    fprintf('Preypop before: %i; Preypop after: ', length(Prey{1}))
+    fprintf('\nGeneration %i: Predatorpop %i PredMoves %i\n',num_Gen,length(Predators(:,1)),PredMoves);
+    fprintf('Preypop before: %i; Preypop after: ', length(Prey))
     for i = 1:Predator_popsize
         for k = 1:PredMoves
             [xpos, ypos] = find(lattice(2:no_x+1,2:no_y+1) == -i);
@@ -168,7 +170,7 @@ for num_Gen = 1:no_generations
 
     fprintf('%i\n' , length(Prey))
     PlotLattice % Write this function
-    PlotPareto(FVal, fonrank)   % Write this function
+    PlotPareto(FVal, fonrank, num_Gen)   % Write this function
 
     %Random placement of New Prey /10 trials
     for i = 1:length(Prey_new)
@@ -177,8 +179,8 @@ for num_Gen = 1:no_generations
             if ~isempty(emptyx > 0)
                 j = ceil(rand*length(emptyx));
                 lattice(emptyx(j)+1,emptyy(j)+1) = length(Prey) + 1;
-                Prey = [Prey; Prey_new(i)];
-                FVal = [FVal; FVal_new];
+                Prey = [Prey Prey_new(i)];
+                FVal = [FVal; FVal_new(i,:)];
                 break
             end
         end
@@ -187,7 +189,7 @@ end
 
 % Choosing only Prey on the Pareto Front
 [fonrank, front] = NONDOM_SORT([FVal]);
-PlotPareto(FVal, fonrank); figure(4)
+PlotPareto(FVal, fonrank, num_Gen); figure(4)
 Prey = Prey(front==1);
 FVal = FVal(front==1,:);
 
@@ -196,8 +198,8 @@ f = [(1:length(FVal(:,1)))' FVal];
 f = sortrows(f, 3); f = sortrows(f, 2); 
 i = 2;
 while i ~= length(f(:,1))
-    if 
-        f(i,2) == f(i-1,2), f(i,:) = []; 
+    if f(i,2) == f(i-1,2)
+		f(i,:) = []; 
         Prey(i) = [];
     else 
         i = i+1; 

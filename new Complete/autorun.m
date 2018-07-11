@@ -5,12 +5,13 @@ warning off
 % Syntax autorun
 %
 % This will be replaced when code added to mastercode
-	Problem_name = 'Aman_dataset';
+	Problem_name = 'ZDT1_100';
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	EvDtrain.in_index = [1:20];
-	EvDtrain.out_index = [21];
-	EvDtrain.generations = 500; % 10 max generations for evolution
-	EvDtrain.NNet_str = [20 20 20];           %maximum number of nodes
+	EvDtrain.in_index = [1:30];
+	EvDtrain.out_index = [32];
+	EvDtrain.generations = 50; % 10 max generations for evolution
+	EvDtrain.Pop_str{1}{1} = [1:30];           %maximum number of nodes
+	EvDtrain.Pop_str{1}{2} = [30 5 5];
 	EvDtrain.Prey_popsize = 800;      %500 Initial popsize
 	EvDtrain.no_Prey_preferred = 300; %500 Desired popsize
 	EvDtrain.no_new_Prey = 50;       %500 new prey introduced every KillInterval

@@ -32,7 +32,7 @@ function Train(Problem_name, param)
     parameters.noinnodes = length(in_index);
 	parameters.nooutnodes = 1;
     parameters.maxrank = 20;
-    parameters.KillInterval =50;
+    parameters.KillInterval =10;
     subsets = 1; overlap = 0;           %number of partitions of datafile and overlap b/w them
 	set_size = length(DataSet(:,1)); parameters.set_size = set_size;
 	parameters.subsets = subsets;
@@ -108,7 +108,7 @@ function Train(Problem_name, param)
 			else
 				fprintf('\nTraining Whole Dataset\n\n');
 			end
-			PP_NNGA(i);
+			PPGA();
 			pause(5)
 		end
 		fprintf('\n\nTrainining Subsets\n');
