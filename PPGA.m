@@ -121,8 +121,9 @@ for num_Gen = 1:no_generations
     end
 
     crodit = CROW_SORT([FVal], front); %   Write this function
-    FVal(:,1) = (FVal(:,1) - min(FVal(:,1)))./(max(FVal(:,1)) - min(FVal(:,1)));
-    FVal(:,2) = (FVal(:,2) - min(FVal(:,2)))./(max(FVal(:,2)) - min(FVal(:,2)));
+    FValKill = [];
+    FValKill(:,1) = (FVal(:,1) - min(FVal(:,1)))./(max(FVal(:,1)) - min(FVal(:,1)));
+    FValKill(:,2) = (FVal(:,2) - min(FVal(:,2)))./(max(FVal(:,2)) - min(FVal(:,2)));
 
     % Move of predators /killing
     PredMoves = floor((length(Prey) - no_Prey_preferred)/Predator_popsize);
@@ -140,7 +141,7 @@ for num_Gen = 1:no_generations
                 end
 
                 % Calculating Fitness Value for all Prey near Predator i, with Elitism
-                f = (FVal(rows,:)*[Predators(i);1-Predators(i)]).*(front(rows)-1);
+                f = (FValKill(rows,:)*[Predators(i);1-Predators(i)]).*(front(rows)-1);
 
                 % Using Crowding in case all Prey have same fitness
                 if length(unique(front(rows))) == 1
@@ -153,7 +154,9 @@ for num_Gen = 1:no_generations
                 [xpos,ypos] = find(lattice(2:no_x+1,2:no_y+1) == j);
                 xpos = xpos+1; ypos = ypos+1;
                 Prey = MovePredator(Prey, xpos, ypos, i, j);
-                FVal(j,:) = []; front(j) = []; crodit(j) = []; fonrank(j) = []; %CHECK!!!!! => checked, works => see MovePredator
+                FValKill(j,:) = []; FVal(j,:) = [];
+                front(j) = []; crodit(j) = []; 
+                fonrank(j) = []; %CHECK!!!!! => checked, works => see MovePredator
             else    %Only move
                 for j=1:10 %10 trial for free spot
                     dx=round(rand*(3-eps)-1.5); %-1 to the left, 0 no move, 1 to the right
@@ -209,14 +212,15 @@ end
 FVal = f(:,2:3);
 
 % Selecting Prey based on Corrected Akaike Information criteria
-for i = 1:length(Prey)
-    IC = Prey(i).IC;
-end
-[~,i] = min(IC); hold on
-parameters.dataset(setno).pareto.select = i;
-plot(FVal(i,2), FVal(i,1), 'dr', 'LineWidth', 2)
+% for i = 1:length(Prey)
+%     IC = Prey(i).IC;
+% end
+% [~,i] = min(IC); hold on
+% parameters.dataset(setno).pareto.select = i;
+% plot(FVal(i,2), FVal(i,1), 'dr', 'LineWidth', 2)
 
 % Saving Output
+setno = 1;
 parameters.dataset(setno).pareto.P = Prey;
-parameters.dataset(setno).pareto.info = IC;
+% parameters.dataset(setno).pareto.info = IC;
 parameters.dataset(setno).pareto.FVal = FVal;
